@@ -11,7 +11,9 @@ from shutil import copy
 from os import makedirs
 from os.path import dirname
 from loris_exception import ResolverException
-from urllib import urlretrieve
+import urllib2
+from urllib2 import URLError
+from urllib2 import HTTPError
 
 logger = getLogger(__name__)
 
@@ -140,15 +142,31 @@ class WebBPLResolver(_AbstractResolver):
                 #logger.warn(log_message)
                 #raise ResolverException(404, public_message)
 
+
+            #jp2 = urllib2.urlopen(urllib2.Request(fp))
+
+            try:
+                response = urllib2.urlopen(fp)
+            except HTTPError:
+                public_message = 'Source image not found for identifier: %s.' % (ident,)
+                log_message = 'Source image not found at %s for identifier: %s.' % (fp,ident)
+                logger.warn(log_message)
+                raise ResolverException(404, public_message)
+            except URLError:
+                public_message = 'Bad URL request made for identifier: %s.' % (ident,)
+                log_message = 'Bad URL request at %s for identifier: %s.' % (fp,ident)
+                logger.warn(log_message)
+                raise ResolverException(404, public_message)
+
             #This always errors?
             try:
                 makedirs(dirname(local_fp))
             except:
                 logger.debug("makedirs still does nothing")
 
-            #jp2 = urllib2.urlopen(urllib2.Request(fp))
-            urlretrieve(fp, local_fp)
+            with open(local_fp, 'wb') as f: f.write(response.read())
 
+            #urlretrieve(fp, local_fp)
             #copy(fp, local_fp)
             logger.info("Copied %s to %s" % (fp, local_fp))
 

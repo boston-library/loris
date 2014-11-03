@@ -85,8 +85,8 @@ def create_app(debug=False, debug_jp2_transformer='kdu'):
         #config['resolver']['src_img_root'] = path.join(project_dp,'tests','img')
 
         config['resolver']['impl'] = 'WebBPLResolver'
-        config['resolver']['source_root'] = 'https://fedoradev.bpl.org/fedora/objects/'
-        config['resolver']['src_img_root'] = '/usr/local/share/images'
+        config['resolver']['source_root'] = 'https://fedora.digitalcommonwealth.org/fedora/objects/'
+        config['resolver']['src_img_root'] = '/usr/local/share/images/loris'
         
         if debug_jp2_transformer == 'opj':
             from transforms import OPJ_JP2Transformer
