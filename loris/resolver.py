@@ -12,6 +12,7 @@ from os import makedirs
 from os.path import dirname
 from loris_exception import ResolverException
 import fnmatch
+import urllib
 
 logger = getLogger(__name__)
 
@@ -139,6 +140,7 @@ class SimpleBPLResolver(_AbstractResolver):
         return (fp, format)
 
     #From: http://stackoverflow.com/questions/1724693/find-a-file-in-python
+    @staticmethod
     def _find(pattern, path):
         result = []
         for root, dirs, files in os.walk(path):
@@ -146,6 +148,65 @@ class SimpleBPLResolver(_AbstractResolver):
                 if fnmatch.fnmatch(name, pattern):
                     result.append(os.path.join(root, name))
         return result
+
+class WebBPLResolver(_AbstractResolver):
+    '''
+    Example resolver that one might use if image files were coming from
+    mounted network storage. The first call to `resolve()` copies the source
+    image into a local cache; subsequent calls use local copy from the cache.
+
+    The config dictionary MUST contain
+     * `cache_root`, which is the absolute path to the directory where images
+        should be cached.
+     * `source_root`, the root directory for source images.
+    '''
+    def __init__(self, config):
+        super(WebBPLResolver, self).__init__(config)
+        self.cache_root = self.config['cache_root']
+        self.source_root = self.config['source_root']
+
+    def is_resolvable(self, ident):
+        ident = unquote(ident)
+        fp = join(self.cache_root, ident)
+        return exists(fp)
+
+    @staticmethod
+    def _format_from_ident(ident):
+        if ident.find('.') == -1:
+            return 'jp2'
+        else:
+            return ident.split('.')[-1]
+
+    def resolve(self, ident):
+        ident = unquote(ident)
+        local_fp = join(self.cache_root, ident)
+
+        if exists(local_fp):
+            format = SourceImageCachingResolver._format_from_ident(ident)
+            logger.debug('src image from local disk: %s' % (local_fp,))
+            return (local_fp, format)
+        else:
+            #fp = join(self.source_root, ident)
+            fp = self.source_root + ident + '/datastreams/accessMaster/content'
+            logger.debug('src image: %s' % (fp,))
+            #if not exists(fp):
+                #public_message = 'Source image not found for identifier: %s.' % (ident,)
+                #log_message = 'Source image not found at %s for identifier: %s.' % (fp,ident)
+                #logger.warn(log_message)
+                #raise ResolverException(404, public_message)
+
+            makedirs(dirname(local_fp))
+
+            #jp2 = urllib2.urlopen(urllib2.Request(fp))
+            urllib.urldownload(fp, local_fp)
+
+            #copy(fp, local_fp)
+            logger.info("Copied %s to %s" % (fp, local_fp))
+
+            format = SourceImageCachingResolver._format_from_ident(ident)
+            logger.debug('src format %s' % (format,))
+
+            return (local_fp, format)
 
 class SourceImageCachingResolver(_AbstractResolver):
     '''
