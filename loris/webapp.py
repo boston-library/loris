@@ -81,8 +81,12 @@ def create_app(debug=False, debug_jp2_transformer='kdu'):
         config['img.ImageCache']['cache_links'] = '/tmp/loris/cache/links'
         config['img.ImageCache']['cache_dp'] = '/tmp/loris/cache/img'
         config['img_info.InfoCache']['cache_dp'] = '/tmp/loris/cache/info'
-        config['resolver']['impl'] = 'SimpleFSResolver' 
-        config['resolver']['src_img_root'] = path.join(project_dp,'tests','img')
+        #config['resolver']['impl'] = 'SimpleFSResolver'
+        #config['resolver']['src_img_root'] = path.join(project_dp,'tests','img')
+
+        config['resolver']['impl'] = 'WebBPLResolver'
+        config['resolver']['source_root'] = 'https://fedoradev.bpl.org/fedora/objects/'
+        config['resolver']['src_img_root'] = '/usr/local/share/images'
         
         if debug_jp2_transformer == 'opj':
             from transforms import OPJ_JP2Transformer
@@ -285,9 +289,10 @@ class Loris(object):
         if ident == '': 
             return self.get_index(request)
 
-        if not self.resolver.is_resolvable(ident):
-            msg = "could not resolve identifier: %s " % (ident)
-            return NotFoundResponse(msg)
+        #FIXME: WTF does this do besides error if not in cache in the first place?
+        #if not self.resolver.is_resolvable(ident):
+            #msg = "could not resolve identifier: %s " % (ident)
+            #return NotFoundResponse(msg)
 
         elif params == '' and request_type == 'info':
             r = LorisResponse()

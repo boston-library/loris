@@ -11,8 +11,7 @@ from shutil import copy
 from os import makedirs
 from os.path import dirname
 from loris_exception import ResolverException
-import fnmatch
-import urllib
+from urllib import urlretrieve
 
 logger = getLogger(__name__)
 
@@ -87,68 +86,6 @@ class SimpleFSResolver(_AbstractResolver):
 
         return (fp, format)
 
-class SimpleBPLResolver(_AbstractResolver):
-
-    def __init__(self, config):
-        super(SimpleBPLResolver, self).__init__(config)
-        self.cache_root = self.config['src_img_root']
-
-    def is_resolvable(self, ident):
-        ident = unquote(ident)
-        ident = ident.replace(':', '%3A')
-        target_string = "info%3Afedora%2F" + ident + "%2FaccessMaster%2FaccessMaster.0"
-        #fp = find(target_string, '/home/fedora/fedora36/data/datastreamStore')
-        fp = SimpleBPLResolver._find(target_string, self.cache_root)
-
-        if len(fp) == 0:
-            return False
-        else:
-            return True
-        #fp = join(self.cache_root, ident)
-
-        #return exists(fp)
-
-    @staticmethod
-    def _format_from_ident(ident):
-        if ident.find('.') == -1:
-            return 'jp2'
-        else:
-            return ident.split('.')[-1]
-
-    def resolve(self, ident):
-        # For this dumb version a constant path is prepended to the identfier
-        # supplied to get the path It assumes this 'identifier' ends with a file
-        # extension from which the format is then derived.
-        ident = unquote(ident)
-
-        ident = ident.replace(':', '%3A')
-        target_string = "info%3Afedora%2F" + ident + "%2FaccessMaster%2FaccessMaster.0"
-        #fp = find(target_string, '/home/fedora/fedora36/data/datastreamStore')
-        fp = SimpleBPLResolver._find(target_string, self.cache_root)[0]
-        #fp = join(self.cache_root, ident)
-        logger.debug('src image: %s' % (fp,))
-
-        if not exists(fp):
-            public_message = 'Source image not found for identifier: %s.' % (ident,)
-            log_message = 'Source image not found at %s for identifier: %s.' % (fp,ident)
-            logger.warn(log_message)
-            raise ResolverException(404, public_message)
-
-        format = SimpleBPLResolver._format_from_ident(ident)
-        logger.debug('src format %s' % (format,))
-
-        return (fp, format)
-
-    #From: http://stackoverflow.com/questions/1724693/find-a-file-in-python
-    @staticmethod
-    def _find(pattern, path):
-        result = []
-        for root, dirs, files in os.walk(path):
-            for name in files:
-                if fnmatch.fnmatch(name, pattern):
-                    result.append(os.path.join(root, name))
-        return result
-
 class WebBPLResolver(_AbstractResolver):
     '''
     Example resolver that one might use if image files were coming from
@@ -180,30 +117,42 @@ class WebBPLResolver(_AbstractResolver):
     def resolve(self, ident):
         ident = unquote(ident)
         local_fp = join(self.cache_root, ident)
+        print ident
+        print local_fp
 
         if exists(local_fp):
-            format = SourceImageCachingResolver._format_from_ident(ident)
+            print "I should not be here"
+            format = WebBPLResolver._format_from_ident(ident)
             logger.debug('src image from local disk: %s' % (local_fp,))
             return (local_fp, format)
         else:
+            print "I should be here"
             #fp = join(self.source_root, ident)
             fp = self.source_root + ident + '/datastreams/accessMaster/content'
             logger.debug('src image: %s' % (fp,))
+
+            #FIXME: Should check header. Sadly, import requests then the following gives 401?
+            #r = requests.head("http://fedoradev.bpl.org/fedora/objects/bpl-dev:k930cv929/datastreams/thumbnail300/content")
+            #print r.status_code
             #if not exists(fp):
                 #public_message = 'Source image not found for identifier: %s.' % (ident,)
                 #log_message = 'Source image not found at %s for identifier: %s.' % (fp,ident)
                 #logger.warn(log_message)
                 #raise ResolverException(404, public_message)
 
-            makedirs(dirname(local_fp))
+            #This always errors?
+            try:
+                makedirs(dirname(local_fp))
+            except:
+                logger.debug("makedirs still does nothing")
 
             #jp2 = urllib2.urlopen(urllib2.Request(fp))
-            urllib.urldownload(fp, local_fp)
+            urlretrieve(fp, local_fp)
 
             #copy(fp, local_fp)
             logger.info("Copied %s to %s" % (fp, local_fp))
 
-            format = SourceImageCachingResolver._format_from_ident(ident)
+            format = WebBPLResolver._format_from_ident(ident)
             logger.debug('src format %s' % (format,))
 
             return (local_fp, format)
