@@ -87,7 +87,7 @@ def create_app(debug=False, debug_jp2_transformer='kdu'):
         config['resolver']['impl'] = 'WebBPLResolver'
         config['resolver']['source_root'] = 'https://fedora.digitalcommonwealth.org/fedora/objects/'
         #config['resolver']['src_img_root'] = '/usr/local/share/images/loris'
-        config['resolver']['src_img_root'] = '/home/hydra/mapped/loris2'
+        config['resolver']['src_img_root'] = '/home/hydra/mapped/loris2/jp2'
         
         if debug_jp2_transformer == 'opj':
             from transforms import OPJ_JP2Transformer
