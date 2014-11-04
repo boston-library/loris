@@ -118,19 +118,18 @@ class WebBPLResolver(_AbstractResolver):
 
     def resolve(self, ident):
         ident = unquote(ident)
+
         local_fp = join(self.cache_root, ident)
         print ident
         print local_fp
 
         if exists(local_fp):
-            print "I should not be here"
             format = WebBPLResolver._format_from_ident(ident)
             logger.debug('src image from local disk: %s' % (local_fp,))
             return (local_fp, format)
         else:
-            print "I should be here"
             #fp = join(self.source_root, ident)
-            fp = self.source_root + ident + '/datastreams/accessMaster/content'
+            fp = self.source_root + ident.replace("__", ":") + '/datastreams/accessMaster/content'
             logger.debug('src image: %s' % (fp,))
 
             #FIXME: Should check header. Sadly, import requests then the following gives 401?

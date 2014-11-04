@@ -370,6 +370,7 @@ class Loris(object):
                 params = '/'.join(r.path.split('/')[-4:])
                 request_type = 'image'
 
+        ident = ident.replace(":", "__")
         ident = quote_plus(ident)
 
         logger.debug('_dissect_uri ident: %s' % (ident,))
