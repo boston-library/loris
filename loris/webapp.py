@@ -290,12 +290,12 @@ class Loris(object):
         if ident == '': 
             return self.get_index(request)
 
-        #FIXME: WTF does this do besides error if not in cache in the first place?
+        #FIXME: This will always initially through a NotFoundResponse as no cache initially?
         #if not self.resolver.is_resolvable(ident):
             #msg = "could not resolve identifier: %s " % (ident)
             #return NotFoundResponse(msg)
-
-        elif params == '' and request_type == 'info':
+        #elif params == '' and request_type == 'info':
+        if params == '' and request_type == 'info':
             r = LorisResponse()
             r.headers['Location'] = '%s/info.json' % (base_uri,)
             r.status_code = 303
